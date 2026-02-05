@@ -1,0 +1,362 @@
+/* Base Styles & Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --deep-red: #8B0000;
+    --crimson: #DC143C;
+    --hot-pink: #FF69B4;
+    --soft-pink: #FFB6C1;
+    --white: #FFFFFF;
+    --cream: #FFF5F5;
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    min-height: 100vh;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1a0a0a 0%, #2d0a0a 50%, #1a0a0a 100%);
+}
+
+/* Floating Hearts Background */
+.hearts-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.floating-heart {
+    position: absolute;
+    font-size: 20px;
+    color: var(--hot-pink);
+    opacity: 0.6;
+    animation: floatUp 8s ease-in-out infinite;
+    text-shadow: 0 0 10px rgba(255, 105, 180, 0.5);
+}
+
+@keyframes floatUp {
+    0% {
+        transform: translateY(100vh) rotate(0deg) scale(0.5);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.6;
+    }
+    90% {
+        opacity: 0.6;
+    }
+    100% {
+        transform: translateY(-100px) rotate(360deg) scale(1);
+        opacity: 0;
+    }
+}
+
+/* Screen Styles */
+.screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.8s ease, visibility 0.8s ease;
+    z-index: 1;
+}
+
+.screen.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Question Screen */
+#questionScreen {
+    background: radial-gradient(ellipse at center, rgba(139, 0, 0, 0.3) 0%, transparent 70%);
+}
+
+.content {
+    text-align: center;
+    padding: 40px;
+    animation: fadeInUp 1s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.title {
+    font-family: 'Great Vibes', cursive;
+    font-size: clamp(3rem, 8vw, 6rem);
+    color: var(--white);
+    text-shadow: 0 0 30px rgba(220, 20, 60, 0.8),
+                 0 0 60px rgba(220, 20, 60, 0.4);
+    margin-bottom: 20px;
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+    from {
+        text-shadow: 0 0 30px rgba(220, 20, 60, 0.8),
+                     0 0 60px rgba(220, 20, 60, 0.4);
+    }
+    to {
+        text-shadow: 0 0 40px rgba(255, 105, 180, 0.9),
+                     0 0 80px rgba(255, 105, 180, 0.5),
+                     0 0 100px rgba(255, 105, 180, 0.3);
+    }
+}
+
+.subtitle {
+    font-size: clamp(1rem, 3vw, 1.5rem);
+    color: var(--soft-pink);
+    margin-bottom: 50px;
+    font-weight: 300;
+    letter-spacing: 2px;
+}
+
+/* Buttons */
+.buttons {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 18px 50px;
+    font-size: 1.3rem;
+    font-family: 'Poppins', sans-serif;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.btn-yes {
+    background: linear-gradient(135deg, var(--crimson) 0%, var(--hot-pink) 100%);
+    color: var(--white);
+    box-shadow: 0 10px 40px rgba(220, 20, 60, 0.5),
+                0 0 20px rgba(255, 105, 180, 0.3);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 10px 40px rgba(220, 20, 60, 0.5),
+                    0 0 20px rgba(255, 105, 180, 0.3);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 15px 50px rgba(220, 20, 60, 0.7),
+                    0 0 40px rgba(255, 105, 180, 0.5);
+    }
+}
+
+.btn-yes:hover {
+    transform: scale(1.1);
+    box-shadow: 0 15px 50px rgba(220, 20, 60, 0.8),
+                0 0 50px rgba(255, 105, 180, 0.6);
+}
+
+.btn-no {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 12px 30px;
+    font-size: 1rem;
+    position: absolute;
+    transition: all 0.15s ease;
+}
+
+.btn-no:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.btn-no.escaping {
+    transition: none;
+}
+
+/* Rose Screen */
+#roseScreen {
+    background: radial-gradient(ellipse at center, rgba(139, 0, 0, 0.2) 0%, transparent 60%);
+}
+
+.rose-container {
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.rose-title {
+    font-family: 'Great Vibes', cursive;
+    font-size: clamp(2rem, 6vw, 4rem);
+    color: var(--white);
+    text-shadow: 0 0 20px rgba(220, 20, 60, 0.6);
+    margin-bottom: 10px;
+    animation: fadeInUp 1s ease;
+}
+
+.rose-hint {
+    color: var(--soft-pink);
+    font-size: 1rem;
+    margin-bottom: 20px;
+    opacity: 0.8;
+    animation: fadeInUp 1s ease 0.3s both;
+}
+
+#roseCanvas {
+    width: 100%;
+    height: 60vh;
+    cursor: grab;
+}
+
+#roseCanvas:active {
+    cursor: grabbing;
+}
+
+/* Message Screen */
+#messageScreen {
+    background: radial-gradient(ellipse at center, rgba(139, 0, 0, 0.4) 0%, rgba(26, 10, 10, 0.9) 70%);
+}
+
+.message-container {
+    text-align: center;
+    padding: 40px;
+    max-width: 700px;
+    animation: fadeInUp 1s ease;
+}
+
+.message-content {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 30px;
+    padding: 50px 40px;
+    border: 1px solid rgba(255, 105, 180, 0.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+                0 0 40px rgba(220, 20, 60, 0.2);
+}
+
+.message-title {
+    font-family: 'Great Vibes', cursive;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    color: var(--hot-pink);
+    margin-bottom: 30px;
+    text-shadow: 0 0 20px rgba(255, 105, 180, 0.5);
+}
+
+.message-text {
+    font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+    color: var(--white);
+    line-height: 2;
+    margin-bottom: 30px;
+    font-weight: 300;
+    white-space: pre-line;
+}
+
+.message-signature {
+    font-family: 'Great Vibes', cursive;
+    font-size: 2rem;
+    color: var(--crimson);
+    text-shadow: 0 0 15px rgba(220, 20, 60, 0.6);
+}
+
+/* Confetti Container */
+.confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.confetti {
+    position: absolute;
+    width: 15px;
+    height: 15px;
+    animation: confettiFall 4s ease-out forwards;
+}
+
+.confetti::before {
+    content: '❤️';
+    font-size: 20px;
+}
+
+@keyframes confettiFall {
+    0% {
+        transform: translateY(-20px) rotate(0deg) scale(0);
+        opacity: 1;
+    }
+    10% {
+        transform: translateY(0) rotate(45deg) scale(1);
+    }
+    100% {
+        transform: translateY(100vh) rotate(720deg) scale(0.5);
+        opacity: 0;
+    }
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .buttons {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .btn-no {
+        position: relative;
+    }
+    
+    .message-content {
+        padding: 30px 20px;
+    }
+}
+
+/* Screen Transitions */
+.screen.fade-out {
+    opacity: 0;
+    transform: scale(0.95);
+}
+
+.screen.fade-in {
+    animation: screenFadeIn 0.8s ease forwards;
+}
+
+@keyframes screenFadeIn {
+    from {
+        opacity: 0;
+        transform: scale(1.05);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}

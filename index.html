@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Special Question for You 💕</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Floating Hearts Background -->
+    <div class="hearts-container" id="heartsContainer"></div>
+
+    <!-- Screen 1: The Question -->
+    <section class="screen active" id="questionScreen">
+        <div class="content">
+            <h1 class="title">Will you be my Valentine?</h1>
+            <p class="subtitle">I have something special for you...</p>
+            <div class="buttons">
+                <button class="btn btn-yes" id="yesBtn">Yes!</button>
+                <button class="btn btn-no" id="noBtn">No</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Screen 2: The 3D Rose -->
+    <section class="screen" id="roseScreen">
+        <div class="rose-container">
+            <h2 class="rose-title">A rose for you, my love</h2>
+            <p class="rose-hint">Click on the rose for a special message...</p>
+            <div id="roseCanvas"></div>
+        </div>
+    </section>
+
+    <!-- Screen 3: The Message -->
+    <section class="screen" id="messageScreen">
+        <div class="message-container">
+            <div class="message-content">
+                <h2 class="message-title">My Dearest Caren,</h2>
+                <p class="message-text" id="loveMessage">
+Hey my sweet Valentine, I hope you like your virtual flower.
+
+I just want you to know that you will always be my Valentine, you will always be the one I love and cherish, no one can steal you from me.
+
+I love you and adore you infinitely, you are the most incredible woman I have ever met.
+
+I am so excited and eager to spend this Valentine with you and every Valentine after.
+
+Mmmmwahhh 💋
+                </p>
+                <div class="message-signature">
+                    Forever yours ❤️
+                </div>
+            </div>
+        </div>
+        <div class="confetti-container" id="confettiContainer"></div>
+    </section>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
