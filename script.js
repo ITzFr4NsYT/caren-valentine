@@ -193,8 +193,8 @@ function initThreeJsRose() {
     controls.dampingFactor = 0.05;
     controls.enableZoom = true;
     controls.enablePan = false;
-    controls.minDistance = 3;
-    controls.maxDistance = 10;
+    controls.minDistance = 4;
+    controls.maxDistance = 15;
     controls.autoRotate = true;
     controls.autoRotateSpeed = 1.0;
     controls.target.set(0, 0.8, 0); // Look at the rose bloom
@@ -307,9 +307,26 @@ function prepareRoseModel(model) {
         child.castShadow = true;
         child.receiveShadow = true;
 
-        if (child.material && child.material.isMeshStandardMaterial) {
-            const color = child.material.color || new THREE.Color(1, 1, 1);
-            const isLeafy = color.g > color.r && color.g > color.b;
+        // Always replace the material - detect leaf/stem by checking original color or name
+        if (child.material) {
+            let isLeafy = false;
+            
+            // Try to detect by original material color
+            if (child.material.color) {
+                const color = child.material.color;
+                isLeafy = color.g > color.r && color.g > color.b;
+            }
+            
+            // Also check mesh name for hints (common naming conventions)
+            const nameLower = (child.name || '').toLowerCase();
+            if (nameLower.includes('leaf') || nameLower.includes('stem') || nameLower.includes('green')) {
+                isLeafy = true;
+            }
+            if (nameLower.includes('petal') || nameLower.includes('flower') || nameLower.includes('bloom')) {
+                isLeafy = false;
+            }
+            
+            // Replace material regardless of original type
             child.material = (isLeafy ? stemMaterial : petalMaterial).clone();
         }
 
@@ -325,9 +342,10 @@ function frameRose(model) {
     const center = box.getCenter(new THREE.Vector3());
     const maxSize = Math.max(size.x, size.y, size.z);
     const fov = THREE.MathUtils.degToRad(camera.fov);
-    const distance = (maxSize / (2 * Math.tan(fov / 2))) * 1.4;
+    // Increase multiplier significantly to zoom out more (was 1.4, now 2.5)
+    const distance = (maxSize / (2 * Math.tan(fov / 2))) * 2.5;
 
-    const direction = new THREE.Vector3(0, 0.35, 1).normalize();
+    const direction = new THREE.Vector3(0, 0.25, 1).normalize();
     camera.position.copy(center.clone().add(direction.multiplyScalar(distance)));
     camera.near = distance / 100;
     camera.far = distance * 100;
