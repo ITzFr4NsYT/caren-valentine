@@ -161,14 +161,14 @@ function initThreeJsRose() {
     // Scene setup
     scene = new THREE.Scene();
     
-    // Camera - good view of the rose
+    // Camera - nice view of the rose from slight angle
     camera = new THREE.PerspectiveCamera(
-        45,
+        50,
         roseCanvas.clientWidth / roseCanvas.clientHeight,
         0.1,
         1000
     );
-    camera.position.set(0, 1.5, 4.5); // Balanced angle
+    camera.position.set(0, 1.8, 4); // Slightly above, looking at rose
     
     // Renderer with maximum quality
     renderer = new THREE.WebGLRenderer({ 
@@ -195,10 +195,10 @@ function initThreeJsRose() {
     controls.minDistance = 3;
     controls.maxDistance = 10;
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.8;
-    controls.target.set(0, 0.5, 0); // Center on the rose
-    controls.maxPolarAngle = Math.PI * 0.7;
-    controls.minPolarAngle = Math.PI * 0.2;
+    controls.autoRotateSpeed = 1.0;
+    controls.target.set(0, 0.8, 0); // Look at the rose bloom
+    controls.maxPolarAngle = Math.PI * 0.75;
+    controls.minPolarAngle = Math.PI * 0.25;
     
     // Studio-quality lighting
     setupLighting();
@@ -206,9 +206,6 @@ function initThreeJsRose() {
     // Create the rose
     rose = createUltraRealisticRose();
     scene.add(rose);
-    
-    // Add dew drops
-    addDewDrops(rose);
     
     // Add floating particles
     createParticles();
@@ -259,203 +256,124 @@ function createUltraRealisticRose() {
     const roseGroup = new THREE.Group();
     petalMeshes = [];
     
-    // Golden angle for natural petal arrangement (137.5 degrees)
-    const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+    // Deep red petal material
+    const petalMaterial = new THREE.MeshStandardMaterial({
+        color: 0x9b111e, // Deep red
+        roughness: 0.6,
+        metalness: 0.05,
+        side: THREE.DoubleSide,
+    });
     
-    // FULLY OPEN BLOOM - natural sized petals, proper red color
+    const innerPetalMaterial = new THREE.MeshStandardMaterial({
+        color: 0x722f37, // Darker burgundy for center
+        roughness: 0.65,
+        metalness: 0.05,
+        side: THREE.DoubleSide,
+    });
+    
+    // Create rose petals in concentric layers - spreading OUTWARD
     const layers = [
-        // Tight center bud
-        { count: 4, baseRadius: 0.03, height: 0.18, width: 0.10, curl: 0.15, yOffset: 0.12, openAngle: 0.3, colorIndex: 0 },
-        // Inner petals - slightly open
-        { count: 5, baseRadius: 0.08, height: 0.28, width: 0.18, curl: 0.25, yOffset: 0.08, openAngle: 0.5, colorIndex: 0 },
-        // Inner-mid petals
-        { count: 6, baseRadius: 0.14, height: 0.38, width: 0.26, curl: 0.35, yOffset: 0.03, openAngle: 0.75, colorIndex: 1 },
+        // Inner tight petals (center bud)
+        { count: 5, radius: 0.06, size: 0.22, tilt: 15, rise: 0.18, material: innerPetalMaterial },
+        { count: 6, radius: 0.12, size: 0.28, tilt: 30, rise: 0.12, material: innerPetalMaterial },
         // Middle petals - opening up
-        { count: 7, baseRadius: 0.22, height: 0.48, width: 0.34, curl: 0.45, yOffset: -0.02, openAngle: 1.0, colorIndex: 1 },
-        // Mid-outer petals
-        { count: 8, baseRadius: 0.32, height: 0.55, width: 0.42, curl: 0.55, yOffset: -0.06, openAngle: 1.2, colorIndex: 2 },
-        // Outer petals - wide open
-        { count: 9, baseRadius: 0.42, height: 0.62, width: 0.50, curl: 0.65, yOffset: -0.10, openAngle: 1.4, colorIndex: 2 },
-        // Outermost petals - fully open, curling back
-        { count: 10, baseRadius: 0.54, height: 0.68, width: 0.56, curl: 0.75, yOffset: -0.13, openAngle: 1.55, colorIndex: 3 },
-        // Edge petals - laying open
-        { count: 11, baseRadius: 0.66, height: 0.72, width: 0.60, curl: 0.85, yOffset: -0.16, openAngle: 1.7, colorIndex: 3 },
+        { count: 7, radius: 0.22, size: 0.35, tilt: 50, rise: 0.06, material: petalMaterial },
+        { count: 8, radius: 0.34, size: 0.42, tilt: 65, rise: 0.0, material: petalMaterial },
+        // Outer petals - fully open
+        { count: 9, radius: 0.48, size: 0.48, tilt: 78, rise: -0.05, material: petalMaterial },
+        { count: 10, radius: 0.64, size: 0.52, tilt: 88, rise: -0.10, material: petalMaterial },
+        // Outermost - laying flat, slightly drooping
+        { count: 11, radius: 0.82, size: 0.55, tilt: 95, rise: -0.14, material: petalMaterial },
     ];
-    
-    // Color palette - DEEP RED colors (not pink)
-    const petalColors = [
-        { base: 0x4a0a0f, edge: 0x6b0f18 }, // Very deep burgundy center
-        { base: 0x6b0f18, edge: 0x8b1520 }, // Deep burgundy
-        { base: 0x8b1520, edge: 0xa01828 }, // Rich red
-        { base: 0xa01828, edge: 0xb01e30 }, // Classic rose red
-    ];
-    
-    let petalIndex = 0;
     
     layers.forEach((layer, layerIdx) => {
-        const colors = petalColors[layer.colorIndex];
+        const angleOffset = layerIdx * 0.4; // Offset each layer
         
         for (let i = 0; i < layer.count; i++) {
-            const petal = createUltraRealisticPetal(
-                layer.width,
-                layer.height,
-                layer.curl,
-                colors.base,
-                colors.edge,
-                layer.openAngle
-            );
+            const petal = createSimplePetal(layer.size);
+            petal.material = layer.material;
             
-            // Golden angle spiral with layer offset
-            const angle = petalIndex * goldenAngle + layerIdx * 0.4;
-            const radiusVariation = 1 + (Math.random() - 0.5) * 0.12;
-            const radius = layer.baseRadius * radiusVariation;
+            // Position in a circle around center
+            const angle = (i / layer.count) * Math.PI * 2 + angleOffset;
             
             petal.position.set(
-                Math.cos(angle) * radius,
-                layer.yOffset + (Math.random() - 0.5) * 0.015,
-                Math.sin(angle) * radius
+                Math.cos(angle) * layer.radius,
+                layer.rise,
+                Math.sin(angle) * layer.radius
             );
             
-            // Petal rotation - faces outward from center, tilts based on openAngle
-            // Positive X rotation tilts petal backward (open), negative tilts forward (closed)
-            const tiltBack = layer.openAngle + (Math.random() - 0.5) * 0.1;
-            petal.rotation.set(
-                -Math.PI/2 + tiltBack,  // Start facing up, then tilt back by openAngle
-                angle,                    // Face outward from center
-                (Math.random() - 0.5) * 0.1
-            );
-            
-            // Natural scale variation
-            const scaleVar = 0.94 + Math.random() * 0.12;
-            petal.scale.set(scaleVar, scaleVar, 1);
+            // Rotate petal to face outward and tilt based on layer
+            // First rotate around Y to face outward from center
+            petal.rotation.y = angle;
+            // Then tilt the petal (X rotation) - higher tilt = more open/flat
+            petal.rotation.x = THREE.MathUtils.degToRad(layer.tilt);
+            // Small random Z rotation for natural variation
+            petal.rotation.z = (Math.random() - 0.5) * 0.15;
             
             petalMeshes.push(petal);
             roseGroup.add(petal);
-            petalIndex++;
         }
     });
     
-    // Create realistic stem
+    // Create stem
     createRealisticStem(roseGroup);
     
     // Add sepals
     createSepals(roseGroup);
     
-    roseGroup.position.y = 1.2; // Position rose nicely in view
+    roseGroup.position.y = 1.0;
     
     return roseGroup;
 }
 
-function createUltraRealisticPetal(width, height, curlAmount, baseColor, edgeColor, openAngle) {
-    const segmentsU = 24;
-    const segmentsV = 32;
+// Simple petal shape that looks like a rose petal
+function createSimplePetal(size) {
+    const shape = new THREE.Shape();
     
-    const geometry = new THREE.BufferGeometry();
-    const vertices = [];
-    const colors = [];
-    const uvs = [];
-    const indices = [];
+    // Draw a petal shape - wide in middle, pointed at base
+    shape.moveTo(0, 0);
+    shape.bezierCurveTo(
+        size * 0.5, size * 0.2,   // control point 1
+        size * 0.55, size * 0.6,  // control point 2
+        size * 0.3, size          // end point (top right)
+    );
+    shape.bezierCurveTo(
+        size * 0.15, size * 1.1,  // control point 1
+        -size * 0.15, size * 1.1, // control point 2
+        -size * 0.3, size         // end point (top left)
+    );
+    shape.bezierCurveTo(
+        -size * 0.55, size * 0.6, // control point 1
+        -size * 0.5, size * 0.2,  // control point 2
+        0, 0                       // back to start
+    );
     
-    const baseCol = new THREE.Color(baseColor);
-    const edgeCol = new THREE.Color(edgeColor);
+    const geometry = new THREE.ShapeGeometry(shape, 12);
     
-    for (let j = 0; j <= segmentsV; j++) {
-        for (let i = 0; i <= segmentsU; i++) {
-            const u = i / segmentsU;
-            const v = j / segmentsV;
-            
-            // WIDE OPEN petal shape - fuller and rounder
-            // Widest in the middle-upper area for open bloom look
-            const baseWidth = Math.pow(Math.sin(v * Math.PI * 0.9 + 0.1), 0.6);
-            const topRounding = v > 0.8 ? Math.cos((v - 0.8) / 0.2 * Math.PI / 2) : 1;
-            const petalWidth = baseWidth * topRounding * width;
-            
-            // X position with natural asymmetry
-            const asymmetry = 1 + Math.sin(v * Math.PI * 1.5) * 0.04;
-            const x = (u - 0.5) * petalWidth * asymmetry;
-            
-            // Y is height along petal
-            const y = v * height;
-            
-            // Z - DRAMATIC curl for open bloom
-            const edgeDist = Math.abs(u - 0.5) * 2;
-            const heightProgress = v;
-            
-            // Strong backward curl - makes petals curve back dramatically
-            const curlBase = heightProgress * heightProgress * curlAmount * 0.7;
-            
-            // Edge curl - edges curl back more
-            const edgeCurl = edgeDist * edgeDist * curlAmount * 0.4 * heightProgress;
-            
-            // Center valley - creates natural petal cupping
-            const centerValley = (1 - edgeDist * edgeDist) * Math.sin(v * Math.PI) * 0.08;
-            
-            // Natural waviness at edges - more pronounced for open petals
-            const waveFreq = 3;
-            const waviness = Math.sin(v * Math.PI * waveFreq + u * 2) * edgeDist * 0.025;
-            
-            // Combine - negative z curves backward (outward when petal is tilted)
-            const z = -(curlBase + edgeCurl) + centerValley + waviness;
-            
-            vertices.push(x, y, z);
-            uvs.push(u, v);
-            
-            // Color gradient - darker at base, lighter at edges and top
-            const colorMix = Math.max(edgeDist * 0.5, heightProgress * 0.5);
-            const vertexColor = baseCol.clone().lerp(edgeCol, colorMix);
-            
-            // Add subtle color variation for natural look
-            const variation = (Math.random() - 0.5) * 0.04;
-            vertexColor.r = Math.max(0, Math.min(1, vertexColor.r + variation));
-            vertexColor.g = Math.max(0, Math.min(1, vertexColor.g + variation * 0.5));
-            vertexColor.b = Math.max(0, Math.min(1, vertexColor.b + variation * 0.5));
-            
-            colors.push(vertexColor.r, vertexColor.g, vertexColor.b);
-        }
+    // Add curve to the petal - curl backward at the top
+    const positions = geometry.getAttribute('position');
+    for (let i = 0; i < positions.count; i++) {
+        const y = positions.getY(i);
+        const x = positions.getX(i);
+        // Curve backward based on height
+        const curl = (y / size) * (y / size) * size * 0.3;
+        // Also curve edges down slightly
+        const edgeCurl = Math.abs(x) / size * 0.1 * y / size;
+        positions.setZ(i, -curl - edgeCurl);
     }
-    
-    // Create indices
-    for (let j = 0; j < segmentsV; j++) {
-        for (let i = 0; i < segmentsU; i++) {
-            const a = j * (segmentsU + 1) + i;
-            const b = a + 1;
-            const c = a + segmentsU + 1;
-            const d = c + 1;
-            
-            indices.push(a, b, c);
-            indices.push(b, d, c);
-        }
-    }
-    
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-    geometry.setIndex(indices);
     geometry.computeVertexNormals();
     
-    // Realistic rose petal material - velvety red
-    const material = new THREE.MeshPhysicalMaterial({
-        vertexColors: true,
-        roughness: 0.7,  // More matte, velvety
-        metalness: 0.0,
-        clearcoat: 0.05, // Very subtle sheen
-        clearcoatRoughness: 0.5,
-        side: THREE.DoubleSide,
-    });
-    
-    return new THREE.Mesh(geometry, material);
+    return new THREE.Mesh(geometry);
 }
 
 function createRealisticStem(roseGroup) {
-    // Natural curved stem path
+    // Simple curved stem
     const stemCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(0, -0.20, 0),
-        new THREE.Vector3(0.03, -0.7, 0.02),
-        new THREE.Vector3(-0.02, -1.3, -0.02),
-        new THREE.Vector3(0.04, -1.9, 0.02),
-        new THREE.Vector3(0.01, -2.5, -0.01),
-        new THREE.Vector3(-0.02, -3.1, 0.01),
-        new THREE.Vector3(0, -3.7, 0)
+        new THREE.Vector3(0, -0.15, 0),
+        new THREE.Vector3(0.02, -0.8, 0.02),
+        new THREE.Vector3(-0.02, -1.5, -0.01),
+        new THREE.Vector3(0.03, -2.2, 0.01),
+        new THREE.Vector3(0, -3.0, 0)
     ]);
     
     // Stem geometry with varying thickness
@@ -634,25 +552,27 @@ function createRoseLeaflet(width, height) {
 }
 
 function createSepals(roseGroup) {
-    const sepalMaterial = new THREE.MeshPhysicalMaterial({
-        color: 0x3d7a3d,
+    const sepalMaterial = new THREE.MeshStandardMaterial({
+        color: 0x2d5a2d,
         roughness: 0.7,
         metalness: 0.0,
         side: THREE.DoubleSide,
     });
     
-    // Sepals at base of rose
+    // Sepals at base of rose - pointing outward and down
     for (let i = 0; i < 5; i++) {
         const sepal = createSepal();
         sepal.material = sepalMaterial;
-        const angle = (i / 5) * Math.PI * 2 + 0.15;
+        const angle = (i / 5) * Math.PI * 2 + 0.2;
         sepal.position.set(
-            Math.cos(angle) * 0.12,
-            -0.18,
-            Math.sin(angle) * 0.12
+            Math.cos(angle) * 0.15,
+            -0.12,
+            Math.sin(angle) * 0.15
         );
-        sepal.rotation.set(0.9 + Math.random() * 0.2, angle, (Math.random() - 0.5) * 0.15);
-        sepal.scale.set(0.8, 1.0, 1);
+        sepal.rotation.y = angle;
+        sepal.rotation.x = Math.PI * 0.55; // Point outward/down
+        sepal.rotation.z = (Math.random() - 0.5) * 0.1;
+        sepal.scale.set(1.2, 1.4, 1);
         roseGroup.add(sepal);
     }
 }
