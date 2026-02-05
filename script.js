@@ -153,7 +153,7 @@ yesBtn.addEventListener('click', () => {
 // ==========================================
 // Three.js 3D Rose - GLTF Model Version
 // ==========================================
-const ROSE_MODEL_URL = "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Flower/Flower.glb";
+const ROSE_MODEL_URL = "https://threejs.org/examples/models/gltf/Flower/Flower.glb";
 let scene, camera, renderer, roseModel, controls;
 let isRoseClickable = true;
 let roseHitTargets = [];
@@ -169,7 +169,7 @@ function initThreeJsRose() {
         0.1,
         1000
     );
-    camera.position.set(0, 1.8, 4); // Slightly above, looking at rose
+    camera.position.set(0, 2.2, 6.5); // Start farther out
     
     // Renderer with maximum quality
     renderer = new THREE.WebGLRenderer({ 
@@ -289,6 +289,18 @@ function prepareRoseModel(model) {
 
     // Improve material settings and collect hit targets
     roseHitTargets = [];
+    const petalMaterial = new THREE.MeshStandardMaterial({
+        color: 0xb11226, // deep rose red
+        roughness: 0.6,
+        metalness: 0.02,
+        side: THREE.DoubleSide,
+    });
+    const stemMaterial = new THREE.MeshStandardMaterial({
+        color: 0x2f5d2f,
+        roughness: 0.7,
+        metalness: 0.0,
+        side: THREE.DoubleSide,
+    });
     model.traverse((child) => {
         if (!child.isMesh) return;
 
@@ -296,12 +308,33 @@ function prepareRoseModel(model) {
         child.receiveShadow = true;
 
         if (child.material && child.material.isMeshStandardMaterial) {
-            child.material.roughness = 0.65;
-            child.material.metalness = 0.0;
+            const color = child.material.color || new THREE.Color(1, 1, 1);
+            const isLeafy = color.g > color.r && color.g > color.b;
+            child.material = (isLeafy ? stemMaterial : petalMaterial).clone();
         }
 
         roseHitTargets.push(child);
     });
+
+    frameRose(model);
+}
+
+function frameRose(model) {
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const maxSize = Math.max(size.x, size.y, size.z);
+    const fov = THREE.MathUtils.degToRad(camera.fov);
+    const distance = (maxSize / (2 * Math.tan(fov / 2))) * 1.4;
+
+    const direction = new THREE.Vector3(0, 0.35, 1).normalize();
+    camera.position.copy(center.clone().add(direction.multiplyScalar(distance)));
+    camera.near = distance / 100;
+    camera.far = distance * 100;
+    camera.updateProjectionMatrix();
+
+    controls.target.copy(center);
+    controls.update();
 }
 
 function createUltraRealisticRose() {
