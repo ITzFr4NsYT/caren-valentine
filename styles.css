@@ -243,20 +243,26 @@ body {
 /* Message Screen */
 #messageScreen {
     background: radial-gradient(ellipse at center, rgba(139, 0, 0, 0.4) 0%, rgba(26, 10, 10, 0.9) 70%);
+    overflow-y: auto;
+    overflow-x: hidden;
+    align-items: flex-start;
+    padding: 20px 0;
 }
 
 .message-container {
     text-align: center;
-    padding: 40px;
-    max-width: 700px;
+    padding: 20px;
+    max-width: 600px;
+    width: 90%;
+    margin: auto;
     animation: fadeInUp 1s ease;
 }
 
 .message-content {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(10px);
-    border-radius: 30px;
-    padding: 50px 40px;
+    border-radius: 25px;
+    padding: 30px 25px;
     border: 1px solid rgba(255, 105, 180, 0.2);
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
                 0 0 40px rgba(220, 20, 60, 0.2);
@@ -264,24 +270,24 @@ body {
 
 .message-title {
     font-family: 'Great Vibes', cursive;
-    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-size: clamp(2rem, 5vw, 3rem);
     color: var(--hot-pink);
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     text-shadow: 0 0 20px rgba(255, 105, 180, 0.5);
 }
 
 .message-text {
-    font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+    font-size: clamp(0.95rem, 2vw, 1.15rem);
     color: var(--white);
-    line-height: 2;
-    margin-bottom: 30px;
+    line-height: 1.8;
+    margin-bottom: 20px;
     font-weight: 300;
     white-space: pre-line;
 }
 
 .message-signature {
     font-family: 'Great Vibes', cursive;
-    font-size: 2rem;
+    font-size: 1.6rem;
     color: var(--crimson);
     text-shadow: 0 0 15px rgba(220, 20, 60, 0.6);
 }

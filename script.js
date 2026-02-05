@@ -151,7 +151,7 @@ yesBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// Three.js 3D Rose
+// Three.js 3D Rose - Realistic Version
 // ==========================================
 let scene, camera, renderer, rose, controls;
 let isRoseClickable = true;
@@ -160,23 +160,28 @@ function initThreeJsRose() {
     // Scene setup
     scene = new THREE.Scene();
     
-    // Camera
+    // Camera - closer view for detail
     camera = new THREE.PerspectiveCamera(
-        60,
+        45,
         roseCanvas.clientWidth / roseCanvas.clientHeight,
         0.1,
         1000
     );
-    camera.position.set(0, 2, 8);
+    camera.position.set(0, 1, 6);
     
-    // Renderer
+    // Renderer with better quality
     renderer = new THREE.WebGLRenderer({ 
         antialias: true, 
-        alpha: true 
+        alpha: true,
+        powerPreference: "high-performance"
     });
     renderer.setSize(roseCanvas.clientWidth, roseCanvas.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setClearColor(0x000000, 0);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
     roseCanvas.appendChild(renderer.domElement);
     
     // Orbit Controls
@@ -185,29 +190,43 @@ function initThreeJsRose() {
     controls.dampingFactor = 0.05;
     controls.enableZoom = true;
     controls.enablePan = false;
-    controls.minDistance = 4;
-    controls.maxDistance = 15;
+    controls.minDistance = 3;
+    controls.maxDistance = 12;
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 1.5;
+    controls.autoRotateSpeed = 1.0;
+    controls.target.set(0, 0, 0);
     
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    // Enhanced Lighting for realistic look
+    const ambientLight = new THREE.AmbientLight(0xfff0f5, 0.4);
     scene.add(ambientLight);
     
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(5, 10, 5);
-    scene.add(directionalLight);
+    // Key light - warm
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    keyLight.position.set(5, 8, 5);
+    keyLight.castShadow = true;
+    scene.add(keyLight);
     
-    const pointLight = new THREE.PointLight(0xff69b4, 0.8, 20);
-    pointLight.position.set(-3, 3, 3);
-    scene.add(pointLight);
+    // Fill light - soft pink
+    const fillLight = new THREE.DirectionalLight(0xffb6c1, 0.5);
+    fillLight.position.set(-5, 3, -5);
+    scene.add(fillLight);
     
-    const pointLight2 = new THREE.PointLight(0xdc143c, 0.6, 20);
-    pointLight2.position.set(3, -2, 3);
-    scene.add(pointLight2);
+    // Rim light - adds depth
+    const rimLight = new THREE.DirectionalLight(0xff69b4, 0.6);
+    rimLight.position.set(0, -3, -5);
+    scene.add(rimLight);
+    
+    // Accent lights for rose glow
+    const accentLight1 = new THREE.PointLight(0xff1744, 0.8, 10);
+    accentLight1.position.set(2, 2, 2);
+    scene.add(accentLight1);
+    
+    const accentLight2 = new THREE.PointLight(0xf50057, 0.6, 10);
+    accentLight2.position.set(-2, 1, 2);
+    scene.add(accentLight2);
     
     // Create the rose
-    rose = createRose();
+    rose = createRealisticRose();
     scene.add(rose);
     
     // Add floating particles
@@ -223,82 +242,195 @@ function initThreeJsRose() {
     animate();
 }
 
-function createRose() {
+function createRealisticRose() {
     const roseGroup = new THREE.Group();
     
-    // Rose material - rich red with some shine
-    const petalMaterial = new THREE.MeshStandardMaterial({
-        color: 0xdc143c,
-        roughness: 0.4,
-        metalness: 0.1,
-        side: THREE.DoubleSide,
-    });
+    // Create realistic petal materials with gradient effect
+    const createPetalMaterial = (baseColor, darkerColor) => {
+        return new THREE.MeshPhysicalMaterial({
+            color: baseColor,
+            roughness: 0.5,
+            metalness: 0.0,
+            clearcoat: 0.3,
+            clearcoatRoughness: 0.4,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.95,
+        });
+    };
     
-    const innerPetalMaterial = new THREE.MeshStandardMaterial({
-        color: 0x8b0000,
-        roughness: 0.5,
-        metalness: 0.1,
-        side: THREE.DoubleSide,
-    });
+    // Different shades for depth
+    const innerPetalMat = createPetalMaterial(0x8b0000, 0x4a0000);
+    const midPetalMat = createPetalMaterial(0xb22222, 0x8b0000);
+    const outerPetalMat = createPetalMaterial(0xdc143c, 0xb22222);
+    const edgePetalMat = createPetalMaterial(0xe91e63, 0xc2185b);
     
-    // Create petals in layers
-    const petalLayers = [
-        { count: 5, radius: 0.3, height: 0.8, yOffset: 0.5, curl: 0.2, material: innerPetalMaterial },
-        { count: 6, radius: 0.5, height: 1.0, yOffset: 0.3, curl: 0.4, material: innerPetalMaterial },
-        { count: 7, radius: 0.8, height: 1.2, yOffset: 0.1, curl: 0.6, material: petalMaterial },
-        { count: 8, radius: 1.1, height: 1.3, yOffset: -0.1, curl: 0.8, material: petalMaterial },
-        { count: 9, radius: 1.4, height: 1.4, yOffset: -0.3, curl: 1.0, material: petalMaterial },
-        { count: 10, radius: 1.7, height: 1.5, yOffset: -0.5, curl: 1.2, material: petalMaterial },
-    ];
-    
-    petalLayers.forEach((layer, layerIndex) => {
-        for (let i = 0; i < layer.count; i++) {
-            const petal = createPetal(layer.height, layer.curl);
-            petal.material = layer.material;
-            
-            const angle = (i / layer.count) * Math.PI * 2 + layerIndex * 0.2;
-            petal.position.x = Math.cos(angle) * layer.radius * 0.3;
-            petal.position.z = Math.sin(angle) * layer.radius * 0.3;
-            petal.position.y = layer.yOffset;
-            
-            petal.rotation.y = angle;
-            petal.rotation.x = -0.3 - layer.curl * 0.3;
-            petal.rotation.z = (Math.random() - 0.5) * 0.2;
-            
-            roseGroup.add(petal);
-        }
-    });
-    
-    // Stem
-    const stemGeometry = new THREE.CylinderGeometry(0.08, 0.1, 4, 8);
-    const stemMaterial = new THREE.MeshStandardMaterial({
-        color: 0x228b22,
-        roughness: 0.7,
-    });
-    const stem = new THREE.Mesh(stemGeometry, stemMaterial);
-    stem.position.y = -2.5;
-    roseGroup.add(stem);
-    
-    // Leaves
-    const leafMaterial = new THREE.MeshStandardMaterial({
-        color: 0x228b22,
-        roughness: 0.6,
-        side: THREE.DoubleSide,
-    });
-    
-    for (let i = 0; i < 3; i++) {
-        const leaf = createLeaf();
-        leaf.material = leafMaterial;
-        leaf.position.y = -1.5 - i * 0.8;
-        leaf.position.x = (i % 2 === 0 ? 1 : -1) * 0.3;
-        leaf.rotation.y = (i % 2 === 0 ? 0 : Math.PI);
-        leaf.rotation.z = (i % 2 === 0 ? -0.5 : 0.5);
-        roseGroup.add(leaf);
+    // Inner tight spiral petals (the bud center)
+    for (let i = 0; i < 8; i++) {
+        const petal = createRealisticPetal(0.4, 0.6, 0.15);
+        petal.material = innerPetalMat;
+        const angle = (i / 8) * Math.PI * 2 + Math.random() * 0.3;
+        const spiralOffset = i * 0.04;
+        petal.position.set(
+            Math.cos(angle) * (0.05 + spiralOffset),
+            0.4 - i * 0.03,
+            Math.sin(angle) * (0.05 + spiralOffset)
+        );
+        petal.rotation.set(-0.2 - i * 0.05, angle + Math.PI, (Math.random() - 0.5) * 0.1);
+        petal.scale.set(0.6 + i * 0.05, 0.6 + i * 0.05, 1);
+        roseGroup.add(petal);
     }
     
+    // Layer 1 - tight inner petals
+    for (let i = 0; i < 5; i++) {
+        const petal = createRealisticPetal(0.7, 0.9, 0.3);
+        petal.material = innerPetalMat;
+        const angle = (i / 5) * Math.PI * 2 + 0.3;
+        petal.position.set(
+            Math.cos(angle) * 0.15,
+            0.25,
+            Math.sin(angle) * 0.15
+        );
+        petal.rotation.set(-0.5, angle + Math.PI, (Math.random() - 0.5) * 0.15);
+        roseGroup.add(petal);
+    }
+    
+    // Layer 2
+    for (let i = 0; i < 6; i++) {
+        const petal = createRealisticPetal(0.9, 1.1, 0.5);
+        petal.material = midPetalMat;
+        const angle = (i / 6) * Math.PI * 2 + 0.5;
+        petal.position.set(
+            Math.cos(angle) * 0.25,
+            0.1,
+            Math.sin(angle) * 0.25
+        );
+        petal.rotation.set(-0.7, angle + Math.PI, (Math.random() - 0.5) * 0.2);
+        roseGroup.add(petal);
+    }
+    
+    // Layer 3
+    for (let i = 0; i < 7; i++) {
+        const petal = createRealisticPetal(1.1, 1.3, 0.7);
+        petal.material = midPetalMat;
+        const angle = (i / 7) * Math.PI * 2 + 0.1;
+        petal.position.set(
+            Math.cos(angle) * 0.35,
+            -0.05,
+            Math.sin(angle) * 0.35
+        );
+        petal.rotation.set(-0.9, angle + Math.PI, (Math.random() - 0.5) * 0.2);
+        roseGroup.add(petal);
+    }
+    
+    // Layer 4 - outer petals starting to open
+    for (let i = 0; i < 8; i++) {
+        const petal = createRealisticPetal(1.3, 1.5, 0.9);
+        petal.material = outerPetalMat;
+        const angle = (i / 8) * Math.PI * 2 + 0.4;
+        petal.position.set(
+            Math.cos(angle) * 0.5,
+            -0.2,
+            Math.sin(angle) * 0.5
+        );
+        petal.rotation.set(-1.1 + (Math.random() * 0.2), angle + Math.PI, (Math.random() - 0.5) * 0.25);
+        roseGroup.add(petal);
+    }
+    
+    // Layer 5 - wide open outer petals
+    for (let i = 0; i < 9; i++) {
+        const petal = createRealisticPetal(1.4, 1.6, 1.1);
+        petal.material = outerPetalMat;
+        const angle = (i / 9) * Math.PI * 2 + 0.2;
+        petal.position.set(
+            Math.cos(angle) * 0.65,
+            -0.35,
+            Math.sin(angle) * 0.65
+        );
+        petal.rotation.set(-1.3 + (Math.random() * 0.3), angle + Math.PI, (Math.random() - 0.5) * 0.3);
+        roseGroup.add(petal);
+    }
+    
+    // Layer 6 - outermost petals, some curling back
+    for (let i = 0; i < 10; i++) {
+        const petal = createRealisticPetal(1.5, 1.7, 1.3);
+        petal.material = edgePetalMat;
+        const angle = (i / 10) * Math.PI * 2;
+        petal.position.set(
+            Math.cos(angle) * 0.8,
+            -0.5,
+            Math.sin(angle) * 0.8
+        );
+        petal.rotation.set(-1.5 + (Math.random() * 0.4), angle + Math.PI, (Math.random() - 0.5) * 0.35);
+        roseGroup.add(petal);
+    }
+    
+    // Stem with slight curve
+    const stemCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(0, -0.6, 0),
+        new THREE.Vector3(0.05, -1.5, 0.02),
+        new THREE.Vector3(-0.02, -2.5, -0.01),
+        new THREE.Vector3(0.03, -3.5, 0.02),
+        new THREE.Vector3(0, -4.5, 0)
+    ]);
+    
+    const stemGeometry = new THREE.TubeGeometry(stemCurve, 20, 0.06, 8, false);
+    const stemMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x2d5a27,
+        roughness: 0.7,
+        metalness: 0.0,
+    });
+    const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+    roseGroup.add(stem);
+    
+    // Add thorns
+    const thornMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x3d6a37,
+        roughness: 0.6,
+    });
+    
+    for (let i = 0; i < 4; i++) {
+        const thorn = createThorn();
+        thorn.material = thornMaterial;
+        const t = 0.2 + i * 0.2;
+        const pos = stemCurve.getPoint(t);
+        thorn.position.copy(pos);
+        thorn.rotation.z = (i % 2 === 0 ? -0.8 : 0.8);
+        thorn.rotation.y = i * 1.2;
+        roseGroup.add(thorn);
+    }
+    
+    // Leaves with veins
+    const leafMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x2e7d32,
+        roughness: 0.6,
+        metalness: 0.0,
+        side: THREE.DoubleSide,
+    });
+    
+    // Leaf positions along stem
+    const leafPositions = [
+        { t: 0.35, side: 1, scale: 1.2 },
+        { t: 0.55, side: -1, scale: 1.0 },
+        { t: 0.75, side: 1, scale: 0.8 },
+    ];
+    
+    leafPositions.forEach((lp, idx) => {
+        const leafGroup = createLeafWithStem();
+        leafGroup.children.forEach(child => {
+            if (child.isMesh) child.material = leafMaterial;
+        });
+        const pos = stemCurve.getPoint(lp.t);
+        leafGroup.position.copy(pos);
+        leafGroup.rotation.y = lp.side > 0 ? 0 : Math.PI;
+        leafGroup.rotation.z = lp.side * 0.6;
+        leafGroup.scale.setScalar(lp.scale);
+        roseGroup.add(leafGroup);
+    });
+    
     // Sepals (green parts at base of rose)
-    const sepalMaterial = new THREE.MeshStandardMaterial({
-        color: 0x2e8b2e,
+    const sepalMaterial = new THREE.MeshPhysicalMaterial({
+        color: 0x3d8b40,
         roughness: 0.6,
         side: THREE.DoubleSide,
     });
@@ -306,60 +438,144 @@ function createRose() {
     for (let i = 0; i < 5; i++) {
         const sepal = createSepal();
         sepal.material = sepalMaterial;
-        const angle = (i / 5) * Math.PI * 2;
-        sepal.position.y = -0.7;
-        sepal.rotation.y = angle;
-        sepal.rotation.x = 0.8;
+        const angle = (i / 5) * Math.PI * 2 + 0.3;
+        sepal.position.set(
+            Math.cos(angle) * 0.15,
+            -0.6,
+            Math.sin(angle) * 0.15
+        );
+        sepal.rotation.set(0.8 + Math.random() * 0.2, angle, 0);
+        sepal.scale.set(1.2, 1.2, 1);
         roseGroup.add(sepal);
     }
     
-    roseGroup.position.y = 0.5;
+    roseGroup.position.y = 1.5;
     
     return roseGroup;
 }
 
-function createPetal(height, curl) {
+function createRealisticPetal(width, height, curlAmount) {
+    // Create petal using a more detailed geometry
+    const segments = 20;
+    const geometry = new THREE.BufferGeometry();
+    const vertices = [];
+    const indices = [];
+    const normals = [];
+    const uvs = [];
+    
+    for (let i = 0; i <= segments; i++) {
+        for (let j = 0; j <= segments; j++) {
+            const u = i / segments;
+            const v = j / segments;
+            
+            // Petal shape equation - wider at top, pointed at bottom
+            const petalWidth = Math.sin(v * Math.PI) * width * (0.3 + v * 0.7);
+            const x = (u - 0.5) * petalWidth;
+            const y = v * height;
+            
+            // Natural curl - more curl at edges and top
+            const edgeFactor = Math.abs(u - 0.5) * 2;
+            const heightFactor = v * v;
+            const curl = curlAmount * heightFactor * (0.3 + edgeFactor * 0.7);
+            const z = -curl + Math.sin(u * Math.PI) * 0.05 * v;
+            
+            // Add slight waviness to edges
+            const waviness = Math.sin(v * Math.PI * 3) * 0.02 * edgeFactor;
+            
+            vertices.push(x + waviness, y, z);
+            uvs.push(u, v);
+        }
+    }
+    
+    // Create faces
+    for (let i = 0; i < segments; i++) {
+        for (let j = 0; j < segments; j++) {
+            const a = i * (segments + 1) + j;
+            const b = a + 1;
+            const c = a + segments + 1;
+            const d = c + 1;
+            
+            indices.push(a, b, c);
+            indices.push(b, d, c);
+        }
+    }
+    
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geometry.setIndex(indices);
+    geometry.computeVertexNormals();
+    
+    return new THREE.Mesh(geometry);
+}
+
+function createThorn() {
+    const geometry = new THREE.ConeGeometry(0.02, 0.15, 4);
+    geometry.rotateX(Math.PI / 2);
+    return new THREE.Mesh(geometry);
+}
+
+function createLeafWithStem() {
+    const group = new THREE.Group();
+    
+    // Leaf stem
+    const stemGeo = new THREE.CylinderGeometry(0.015, 0.02, 0.4, 6);
+    const leafStem = new THREE.Mesh(stemGeo);
+    leafStem.rotation.z = Math.PI / 2;
+    leafStem.position.x = 0.2;
+    group.add(leafStem);
+    
+    // Main leaf
+    const leaf = createDetailedLeaf(0.6, 0.35);
+    leaf.position.x = 0.5;
+    leaf.rotation.y = 0.1;
+    group.add(leaf);
+    
+    return group;
+}
+
+function createDetailedLeaf(length, width) {
     const shape = new THREE.Shape();
     
-    // Petal shape - heart-like
+    // Rose leaf shape - serrated edges
     shape.moveTo(0, 0);
-    shape.bezierCurveTo(0.3, 0.3, 0.4, 0.7, 0.2, height);
-    shape.bezierCurveTo(0.1, height + 0.1, -0.1, height + 0.1, -0.2, height);
-    shape.bezierCurveTo(-0.4, 0.7, -0.3, 0.3, 0, 0);
     
-    const extrudeSettings = {
-        steps: 2,
-        depth: 0.02,
-        bevelEnabled: true,
-        bevelThickness: 0.01,
-        bevelSize: 0.02,
-        bevelSegments: 2,
-    };
+    // Right side with serrations
+    const serrations = 5;
+    for (let i = 0; i < serrations; i++) {
+        const t = (i + 1) / (serrations + 1);
+        const x = Math.sin(t * Math.PI) * width;
+        const y = t * length;
+        const peakX = x + 0.03;
+        shape.lineTo(peakX, y - 0.02);
+        shape.lineTo(x, y);
+    }
     
-    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    const petal = new THREE.Mesh(geometry);
+    // Tip
+    shape.quadraticCurveTo(width * 0.3, length, 0, length + 0.05);
     
-    // Bend the petal
-    const positionAttribute = geometry.getAttribute('position');
-    for (let i = 0; i < positionAttribute.count; i++) {
-        const y = positionAttribute.getY(i);
-        const bendAmount = (y / height) * curl * 0.3;
-        positionAttribute.setZ(i, positionAttribute.getZ(i) - bendAmount);
+    // Left side with serrations
+    for (let i = serrations - 1; i >= 0; i--) {
+        const t = (i + 1) / (serrations + 1);
+        const x = -Math.sin(t * Math.PI) * width;
+        const y = t * length;
+        const peakX = x - 0.03;
+        shape.lineTo(x, y);
+        shape.lineTo(peakX, y - 0.02);
+    }
+    
+    shape.lineTo(0, 0);
+    
+    const geometry = new THREE.ShapeGeometry(shape, 12);
+    
+    // Add slight curve to leaf
+    const positions = geometry.getAttribute('position');
+    for (let i = 0; i < positions.count; i++) {
+        const y = positions.getY(i);
+        const curve = Math.sin((y / length) * Math.PI) * 0.05;
+        positions.setZ(i, curve);
     }
     geometry.computeVertexNormals();
     
-    return petal;
-}
-
-function createLeaf() {
-    const shape = new THREE.Shape();
-    
-    shape.moveTo(0, 0);
-    shape.bezierCurveTo(0.3, 0.2, 0.4, 0.5, 0.2, 0.8);
-    shape.bezierCurveTo(0.1, 0.9, -0.1, 0.9, -0.2, 0.8);
-    shape.bezierCurveTo(-0.4, 0.5, -0.3, 0.2, 0, 0);
-    
-    const geometry = new THREE.ShapeGeometry(shape);
     return new THREE.Mesh(geometry);
 }
 
@@ -367,16 +583,25 @@ function createSepal() {
     const shape = new THREE.Shape();
     
     shape.moveTo(0, 0);
-    shape.bezierCurveTo(0.1, 0.1, 0.15, 0.3, 0.08, 0.5);
-    shape.lineTo(0, 0.55);
-    shape.lineTo(-0.08, 0.5);
-    shape.bezierCurveTo(-0.15, 0.3, -0.1, 0.1, 0, 0);
+    shape.quadraticCurveTo(0.12, 0.2, 0.08, 0.5);
+    shape.quadraticCurveTo(0.04, 0.6, 0, 0.65);
+    shape.quadraticCurveTo(-0.04, 0.6, -0.08, 0.5);
+    shape.quadraticCurveTo(-0.12, 0.2, 0, 0);
     
-    const geometry = new THREE.ShapeGeometry(shape);
+    const geometry = new THREE.ShapeGeometry(shape, 8);
+    
+    // Curve the sepal
+    const positions = geometry.getAttribute('position');
+    for (let i = 0; i < positions.count; i++) {
+        const y = positions.getY(i);
+        positions.setZ(i, -y * 0.3);
+    }
+    geometry.computeVertexNormals();
+    
     return new THREE.Mesh(geometry);
 }
 
-// Particle system for sparkles
+// Particle system for sparkles - enhanced with glowing effect
 let particles;
 
 function createParticles() {
