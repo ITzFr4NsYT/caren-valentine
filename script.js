@@ -151,11 +151,12 @@ yesBtn.addEventListener('click', () => {
 });
 
 // ==========================================
-// Three.js 3D Rose - Ultra Realistic Version
+// Three.js 3D Rose - GLTF Model Version
 // ==========================================
-let scene, camera, renderer, rose, controls;
+const ROSE_MODEL_URL = "https://raw.githubusercontent.com/mrdoob/three.js/master/examples/models/gltf/Flower/Flower.glb";
+let scene, camera, renderer, roseModel, controls;
 let isRoseClickable = true;
-let petalMeshes = []; // Store for animation
+let roseHitTargets = [];
 
 function initThreeJsRose() {
     // Scene setup
@@ -203,9 +204,8 @@ function initThreeJsRose() {
     // Studio-quality lighting
     setupLighting();
     
-    // Create the rose
-    rose = createUltraRealisticRose();
-    scene.add(rose);
+    // Load realistic rose model (glTF)
+    loadRoseModel();
     
     // Add floating particles
     createParticles();
@@ -250,6 +250,58 @@ function setupLighting() {
     const accentLight = new THREE.PointLight(0xffeedd, 0.4, 8);
     accentLight.position.set(1, 2, 2);
     scene.add(accentLight);
+}
+
+function loadRoseModel() {
+    const loader = new THREE.GLTFLoader();
+    loader.load(
+        ROSE_MODEL_URL,
+        (gltf) => {
+            if (roseModel) {
+                scene.remove(roseModel);
+            }
+
+            roseModel = gltf.scene;
+            prepareRoseModel(roseModel);
+            scene.add(roseModel);
+        },
+        undefined,
+        (error) => {
+            console.error("Failed to load rose model:", error);
+        }
+    );
+}
+
+function prepareRoseModel(model) {
+    // Normalize scale and center
+    const box = new THREE.Box3().setFromObject(model);
+    const size = new THREE.Vector3();
+    const center = new THREE.Vector3();
+    box.getSize(size);
+    box.getCenter(center);
+
+    model.position.sub(center);
+    const scale = 2.6 / Math.max(size.y, 1e-3);
+    model.scale.setScalar(scale);
+
+    // Lift slightly so it sits nicely in view
+    model.position.y += 0.6;
+
+    // Improve material settings and collect hit targets
+    roseHitTargets = [];
+    model.traverse((child) => {
+        if (!child.isMesh) return;
+
+        child.castShadow = true;
+        child.receiveShadow = true;
+
+        if (child.material && child.material.isMeshStandardMaterial) {
+            child.material.roughness = 0.65;
+            child.material.metalness = 0.0;
+        }
+
+        roseHitTargets.push(child);
+    });
 }
 
 function createUltraRealisticRose() {
@@ -717,7 +769,8 @@ function onRoseClick(event) {
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(mouse, camera);
     
-    const intersects = raycaster.intersectObjects(rose.children, true);
+    const targets = roseHitTargets.length > 0 ? roseHitTargets : (roseModel ? [roseModel] : []);
+    const intersects = raycaster.intersectObjects(targets, true);
     
     if (intersects.length > 0) {
         isRoseClickable = false;
@@ -733,26 +786,9 @@ function animate() {
     // Update controls
     controls.update();
     
-    // Subtle petal breathing animation
-    if (petalMeshes && petalMeshes.length > 0) {
-        petalMeshes.forEach((petal, i) => {
-            // Very subtle rotation oscillation
-            const baseRotX = petal.userData.baseRotX || petal.rotation.x;
-            const baseRotZ = petal.userData.baseRotZ || petal.rotation.z;
-            
-            if (!petal.userData.baseRotX) {
-                petal.userData.baseRotX = petal.rotation.x;
-                petal.userData.baseRotZ = petal.rotation.z;
-                petal.userData.phase = Math.random() * Math.PI * 2;
-            }
-            
-            // Gentle swaying motion
-            const sway = Math.sin(time * 0.5 + petal.userData.phase) * 0.008;
-            const breathe = Math.sin(time * 0.3 + i * 0.1) * 0.005;
-            
-            petal.rotation.x = baseRotX + sway;
-            petal.rotation.z = baseRotZ + breathe;
-        });
+    // Gentle rotation for the rose model
+    if (roseModel) {
+        roseModel.rotation.y += 0.002;
     }
     
     // Animate particles with sparkle effect
